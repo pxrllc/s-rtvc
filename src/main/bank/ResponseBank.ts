@@ -54,8 +54,8 @@ const ONSET_DATA: ResponseEntry[] = [
 
   // ── express_positive（ポジティブ）── 4エントリ
   onset('pos_01', 'express_positive', 'いいね',       ['いいじゃん'],         8000,  'positive', 'high'),
-  onset('pos_02', 'express_positive', 'それ最高',     ['すごいじゃん'],       10000, 'positive', 'high'),
-  onset('pos_03', 'express_positive', 'やるじゃん',   ['すごいね'],           9000,  'positive'),
+  onset('pos_02', 'express_positive', 'それ最高',     ['すごいじゃん'],       30000, 'positive', 'high'),
+  onset('pos_03', 'express_positive', 'やるじゃん',   ['すごいね'],           25000, 'positive'),
   onset('pos_04', 'express_positive', 'うれしいね',   ['よかった'],           8000,  'positive'),
 
   // ── express_negative（ネガティブ）── 4エントリ
@@ -65,10 +65,10 @@ const ONSET_DATA: ResponseEntry[] = [
   onset('neg_04', 'express_negative', 'しんどいね',     ['きついね'],           11000, 'negative'),
 
   // ── express_surprise（驚き）── 4エントリ
-  onset('sur_01', 'express_surprise', 'えっ、マジで',  ['うそ'],               10000, 'surprised', 'high'),
-  onset('sur_02', 'express_surprise', 'ほんとに',      ['まじか'],             8000,  'surprised', 'high'),
-  onset('sur_03', 'express_surprise', 'えー！',        ['うわっ'],             7000,  'surprised', 'high'),
-  onset('sur_04', 'express_surprise', 'びっくりした',  ['それは知らなかった'], 12000, 'surprised'),
+  onset('sur_01', 'express_surprise', 'えっ、マジで',  ['うそ'],               25000, 'surprised', 'high'),
+  onset('sur_02', 'express_surprise', 'ほんとに',      ['まじか'],             20000, 'surprised', 'high'),
+  onset('sur_03', 'express_surprise', 'えー！',        ['うわっ'],             20000, 'surprised', 'high'),
+  onset('sur_04', 'express_surprise', 'びっくりした',  ['それは知らなかった'], 25000, 'surprised'),
 
   // ── express_complaint（不満・愚痴）── 4エントリ
   onset('comp_01', 'express_complaint', 'それはムカつく', ['わかるそれ'],         12000, 'negative'),
@@ -132,16 +132,31 @@ const ONSET_DATA: ResponseEntry[] = [
   onset('dis_02', 'disagreement', 'むずかしいね',     ['一概には'],           10000),
   onset('dis_03', 'disagreement', 'でもさ',           ['ちょっと待って'],     7000),
 
-  // ── ambiguous（パターン不一致・汎用）──
-  // 短くて自然な汎用反応を8種類、短いテキスト優先（合成速度重視）
-  onset('amb_01', 'ambiguous', 'へえ',         [],                     4000),
-  onset('amb_02', 'ambiguous', 'そっかー',     ['そっか'],             5000),
-  onset('amb_03', 'ambiguous', 'うんうん',     ['うん'],               4000),
-  onset('amb_04', 'ambiguous', 'そうなんだ',   [],                     5000),
-  onset('amb_05', 'ambiguous', 'あ、なるほど', ['なるほど'],           6000),
-  onset('amb_06', 'ambiguous', 'ふーん',       [],                     4000),
-  onset('amb_07', 'ambiguous', 'それはそれは', [],                     6000),
-  onset('amb_08', 'ambiguous', 'マジで',       ['ほんとに？'],         5000),
+  // ── ambiguous（パターン不一致・汎用リアクション）──
+  // confidence >= 0.4 かつ ambiguous 判定のとき使用
+  onset('amb_01', 'ambiguous', 'へえ',         [],             4000),
+  onset('amb_02', 'ambiguous', 'そっかー',     ['そっか'],     5000),
+  onset('amb_03', 'ambiguous', 'そうなんだ',   [],             5000),
+  onset('amb_04', 'ambiguous', 'あ、なるほど', ['なるほど'],   6000),
+  onset('amb_05', 'ambiguous', 'ふーん',       [],             4000),
+  onset('amb_06', 'ambiguous', 'それはそれは', [],             6000),
+  onset('amb_07', 'ambiguous', 'マジで',       ['ほんとに？'], 5000),
+]
+
+// ── listening（傾聴・低confidence時フォールバック）──────────────────
+// confidence < 0.4 の時に使用。文脈に依存しない安全な相槌。
+// cooldown 短め（会話の流れを止めないため）
+const LISTENING_DATA: ResponseEntry[] = [
+  onset('lis_01', 'ambiguous', 'うん',         ['うんうん'],     3000),
+  onset('lis_02', 'ambiguous', 'そうそう',     ['そうだね'],     3000),
+  onset('lis_03', 'ambiguous', 'そっか',       ['そっかそっか'], 3000),
+  onset('lis_04', 'ambiguous', 'ほんとに',     ['ほんとだね'],   4000),
+  onset('lis_05', 'ambiguous', 'たしかに',     ['たしかだね'],   4000),
+  onset('lis_06', 'ambiguous', 'なるほど',     ['なるほどね'],   3000),
+  onset('lis_07', 'ambiguous', 'うんうん',     [],               3000),
+  onset('lis_08', 'ambiguous', 'そうだよね',   [],               4000),
+  onset('lis_09', 'ambiguous', 'だよね',       [],               3000),
+  onset('lis_10', 'ambiguous', 'ふむ',         ['ふむふむ'],     3000),
 ]
 
 // =========================================================
@@ -160,9 +175,13 @@ const BODY_DATA: ResponseEntry[] = [
 // =========================================================
 // ResponseBank
 // =========================================================
+/** confidence がこの値未満なら傾聴フォールバック */
+const LISTENING_THRESHOLD = 0.45
+
 export class ResponseBank {
   private byStageIntent = new Map<string, ResponseEntry[]>()
   private byId = new Map<string, ResponseEntry>()
+  private listeningPool: ResponseEntry[]
 
   constructor() {
     for (const entry of [...ONSET_DATA, ...BODY_DATA]) {
@@ -172,23 +191,33 @@ export class ResponseBank {
       this.byStageIntent.set(key, list)
       this.byId.set(entry.id, entry)
     }
+    this.listeningPool = LISTENING_DATA
   }
 
-  getOnset(intent: IntentCategory): ResponseEntry {
+  getOnset(intent: IntentCategory, confidence: number): ResponseEntry {
+    // confidence が低い場合は傾聴フォールバック（文脈乖離を防ぐ）
+    if (confidence < LISTENING_THRESHOLD) {
+      return this.pickFrom(this.listeningPool)
+    }
+
     const key = `onset:${intent}`
     const candidates = this.byStageIntent.get(key) ?? []
 
     // candidates がなければ ambiguous にフォールバック
     const pool = candidates.length > 0 ? candidates : (this.byStageIntent.get('onset:ambiguous') ?? [])
 
+    return this.pickFrom(pool)
+  }
+
+  private pickFrom(pool: ResponseEntry[]): ResponseEntry {
     const now = Date.now()
     const available = pool.filter(e => !e.lastUsedAt || now - e.lastUsedAt > e.cooldownMs)
     const source = available.length > 0 ? available : pool
 
-    // 使用回数が少ないものを優先
-    source.sort((a, b) => a.usageCount - b.usageCount)
-    const minCount = source[0].usageCount
-    const leastUsed = source.filter(e => e.usageCount === minCount)
+    // 使用回数が少ないものを優先（元配列を変えないようコピーしてソート）
+    const sorted = [...source].sort((a, b) => a.usageCount - b.usageCount)
+    const minCount = sorted[0].usageCount
+    const leastUsed = sorted.filter(e => e.usageCount === minCount)
     const selected = leastUsed[Math.floor(Math.random() * leastUsed.length)]
 
     selected.usageCount++

@@ -1,6 +1,6 @@
 {
   "name": "sentinel-rtvc",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "description": "Sentinel Real Time Voice Core",
   "main": "out/main/index.js",
   "scripts": {

@@ -1,6 +1,6 @@
 /**
  * Groq Chat Completions クライアント
- * モデル: llama-3.1-8b-instant（最速・無料枠あり）
+ * モデル: llama-3.3-70b-versatile（高品質・無料枠あり）
  */
 
 const GROQ_CHAT_URL = 'https://api.groq.com/openai/v1/chat/completions'
@@ -26,11 +26,15 @@ export class GroqLLMClient {
     this.apiKey = apiKey
   }
 
-  async generate(userText: string): Promise<string> {
+  async generate(userText: string, memoryContext?: string): Promise<string> {
     this.history.push({ role: 'user', content: userText })
 
+    const systemContent = memoryContext
+      ? `${SYSTEM_PROMPT}\n\n${memoryContext}`
+      : SYSTEM_PROMPT
+
     const messages: Message[] = [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: systemContent },
       ...this.history.slice(-this.MAX_HISTORY_TURNS)
     ]
 
@@ -41,7 +45,7 @@ export class GroqLLMClient {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
+        model: 'llama-3.3-70b-versatile',
         messages,
         max_tokens: 120,
         temperature: 0.75
@@ -60,7 +64,6 @@ export class GroqLLMClient {
 
     this.history.push({ role: 'assistant', content: reply })
 
-    // 履歴が長くなりすぎたら古いものを削除
     if (this.history.length > this.MAX_HISTORY_TURNS * 2) {
       this.history = this.history.slice(-this.MAX_HISTORY_TURNS * 2)
     }

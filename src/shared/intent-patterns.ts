@@ -647,7 +647,7 @@ export class AhoCorasickEngine {
     const hits = this.search(text);
 
     if (hits.length === 0) {
-      return { intent: "ambiguous", confidence: 0, matches: [], method: "rule" };
+      return { intent: "ambiguous", confidence: 0, matches: [], method: "rule", scores: new Map() };
     }
 
     // negation チェック: 無効化対象を除外
@@ -658,7 +658,7 @@ export class AhoCorasickEngine {
     });
 
     if (validHits.length === 0) {
-      return { intent: "ambiguous", confidence: 0, matches: [], method: "rule" };
+      return { intent: "ambiguous", confidence: 0, matches: [], method: "rule", scores: new Map() };
     }
 
     // 意図ごとにスコアを集約
@@ -691,6 +691,7 @@ export class AhoCorasickEngine {
       confidence: Math.min(1.0, bestScore),
       matches: intentHits.get(bestIntent) || [],
       method: "rule",
+      scores: intentScores,
     };
   }
 
@@ -713,4 +714,5 @@ export type IntentClassification = {
   confidence: number;
   matches: AhoCorasickHit[];
   method: "rule" | "llm";
+  scores: Map<IntentCategory, number>;
 };

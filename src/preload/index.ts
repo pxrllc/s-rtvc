@@ -8,12 +8,6 @@ contextBridge.exposeInMainWorld('sentinel', {
   onPcm: (cb: (pcm: Float32Array, sampleRate: number, id: string) => void) => {
     ipcRenderer.on('tts:pcm', (_e, pcm, sampleRate, id) => cb(pcm, sampleRate, id))
   },
-  // body をキャンセルして LLM PCM をエンキュー
-  onCancelAndEnqueue: (cb: (cancelId: string, pcm: Float32Array, sampleRate: number) => void) => {
-    ipcRenderer.on('tts:cancel_and_enqueue', (_e, cancelId, pcm, sampleRate) =>
-      cb(cancelId, pcm, sampleRate)
-    )
-  },
   onTtsStop: (cb: () => void) => {
     ipcRenderer.on('tts:stop', () => cb())
   },
@@ -32,7 +26,7 @@ contextBridge.exposeInMainWorld('sentinel', {
 
   removeAllListeners: () => {
     for (const ch of [
-      'tts:pcm', 'tts:cancel_and_enqueue', 'tts:stop',
+      'tts:pcm', 'tts:stop',
       'log', 'intent:result', 'asr:transcript', 'asr:status'
     ]) {
       ipcRenderer.removeAllListeners(ch)

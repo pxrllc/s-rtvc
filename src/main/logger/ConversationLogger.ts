@@ -15,7 +15,6 @@ type LogEntry =
       confidence: number
       method: 'rule' | 'llm'
       onsetText: string
-      bodyTemplateText: string | null
       classifyMs: number
     }
   | {
@@ -24,7 +23,6 @@ type LogEntry =
       model: string
       text: string
       latencyMs: number
-      usedInstead: 'body_template' | 'llm'  // 実際に再生されたのはどちら
     }
 
 export class ConversationLogger {
@@ -57,7 +55,6 @@ export class ConversationLogger {
   logAlgorithmDecision(
     result: IntentClassification,
     onsetText: string,
-    bodyTemplateText: string | null,
     classifyMs: number
   ): void {
     this.write({
@@ -67,23 +64,17 @@ export class ConversationLogger {
       confidence: result.confidence,
       method: result.method,
       onsetText,
-      bodyTemplateText,
       classifyMs
     })
   }
 
-  logLLMResponse(
-    text: string,
-    latencyMs: number,
-    usedInstead: 'body_template' | 'llm'
-  ): void {
+  logLLMResponse(text: string, latencyMs: number): void {
     this.write({
       ts: new Date().toISOString(),
       type: 'llm_response',
-      model: 'llama-3.1-8b-instant',
+      model: 'llama-3.3-70b-versatile',
       text,
-      latencyMs,
-      usedInstead
+      latencyMs
     })
   }
 

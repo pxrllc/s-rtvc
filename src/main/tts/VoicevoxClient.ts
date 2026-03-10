@@ -15,8 +15,9 @@ export class VoicevoxClient {
   /**
    * テキスト → WAV バイナリ（Buffer）
    * audio_query → synthesis の2ステップ
+   * @param speedScale 話速倍率（デフォルト 1.0 / 範囲 0.5〜2.0）
    */
-  async synthesize(text: string): Promise<Buffer> {
+  async synthesize(text: string, speedScale = 1.0): Promise<Buffer> {
     // Step1: audio_query
     const queryRes = await fetch(
       `${VOICEVOX_BASE}/audio_query?text=${encodeURIComponent(text)}&speaker=${this.speakerId}`,
@@ -26,6 +27,7 @@ export class VoicevoxClient {
       throw new Error(`audio_query failed: ${queryRes.status} ${await queryRes.text()}`)
     }
     const query = await queryRes.json()
+    query.speedScale = speedScale
 
     // Step2: synthesis
     const synthRes = await fetch(

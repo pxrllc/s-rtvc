@@ -15,7 +15,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const PROJECT_ROOT = join(__dirname, '..')
 const CACHE_DIR = join(PROJECT_ROOT, 'cache', 'audio')
 const VOICEVOX_BASE = 'http://localhost:50021'
-const SPEAKER_ID = 1  // ずんだもん
+const SPEAKER_ID = 1   // ずんだもん
+const SPEED_ONSET = 1.2  // ConversationOrchestrator の SPEED_ONSET と合わせること
 
 // ── ResponseBank から全 onset テキストを収集 ────────────────────────
 // ※ ResponseBank を直接 import せず、テキスト一覧を独立して管理することで
@@ -100,6 +101,7 @@ async function synthesize(text: string): Promise<Buffer> {
   )
   if (!queryRes.ok) throw new Error(`audio_query failed: ${queryRes.status}`)
   const query = await queryRes.json()
+  query.speedScale = SPEED_ONSET
 
   const synthRes = await fetch(
     `${VOICEVOX_BASE}/synthesis?speaker=${SPEAKER_ID}`,

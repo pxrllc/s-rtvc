@@ -22,7 +22,6 @@ declare global {
       submitAudio: (buf: ArrayBuffer) => void
       stopTts: () => void
       onPcm: (cb: (pcm: Float32Array, sampleRate: number, id: string) => void) => void
-      onCancelAndEnqueue: (cb: (cancelId: string, pcm: Float32Array, sampleRate: number) => void) => void
       onTtsStop: (cb: () => void) => void
       onLog: (cb: (level: string, message: string) => void) => void
       onIntentResult: (cb: (result: unknown, latencyMs: number) => void) => void
@@ -63,17 +62,6 @@ export default function App() {
     window.sentinel.onPcm((pcm, sampleRate, id) => {
       setIsPlaying(true)
       playerRef.current!.enqueue(pcm, sampleRate, id)
-    })
-
-    // body キャンセル → LLM 差し替え
-    window.sentinel.onCancelAndEnqueue((cancelId, pcm, sampleRate) => {
-      const cancelled = playerRef.current!.cancelIfPending(cancelId)
-      playerRef.current!.enqueue(pcm, sampleRate, 'llm')
-      if (cancelled) {
-        addLog('info', '[Queue] body テンプレートをLLMで差し替え')
-      } else {
-        addLog('info', '[Queue] body再生済み → LLMを後続に追加')
-      }
     })
 
     window.sentinel.onTtsStop(() => {
@@ -146,7 +134,7 @@ export default function App() {
     <div style={styles.root}>
       <div style={styles.header}>
         <span style={styles.title}>Sentinel RTVC</span>
-        <span style={styles.subtitle}>v0.1.0 — 音声 / テキスト → Aho-Corasick + LLM → TTS</span>
+        <span style={styles.subtitle}>v0.1.4 — 音声 / テキスト → Aho-Corasick + LLM → TTS</span>
       </div>
 
       <div style={styles.statusBar}>
