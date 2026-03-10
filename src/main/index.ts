@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { ConversationOrchestrator } from './orchestrator/ConversationOrchestrator'
 import { GroqSTTClient } from './asr/GroqSTTClient'
+import { createLLMProvider } from './llm/LLMProviderFactory'
 
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
@@ -30,11 +31,13 @@ function createWindow(): BrowserWindow {
 
 app.whenReady().then(async () => {
   const win = createWindow()
-  const groqApiKey = import.meta.env.MAIN_VITE_GROQ_API_KEY as string | undefined
-  const validKey = groqApiKey && groqApiKey !== 'your_groq_api_key_here' ? groqApiKey : undefined
-  const orchestrator = new ConversationOrchestrator(win, validKey)
+  const env = import.meta.env as Record<string, string | undefined>
+  const llmProvider = createLLMProvider(env)
+  const orchestrator = new ConversationOrchestrator(win, llmProvider)
 
-  const stt = validKey ? new GroqSTTClient(validKey) : null
+  const groqApiKey = env.MAIN_VITE_GROQ_API_KEY
+  const validGroqKey = groqApiKey && groqApiKey !== 'your_groq_api_key_here' ? groqApiKey : undefined
+  const stt = validGroqKey ? new GroqSTTClient(validGroqKey) : null
 
   // 起動時初期化（VOICEVOX確認 + キャッシュロード）
   win.webContents.once('did-finish-load', async () => {
@@ -44,6 +47,8 @@ app.whenReady().then(async () => {
 
     if (ok) await orchestrator.loadCache()
 
+    win.webContents.send('log', llmProvider ? 'info' : 'warn',
+      llmProvider ? `[LLM] ${llmProvider.providerName} / ${llmProvider.modelName}` : '[LLM] プロバイダー未設定 — LLMなしモード')
     win.webContents.send('log', stt ? 'info' : 'warn',
       stt ? '[Groq STT] APIキー設定済み' : '[Groq STT] APIキー未設定 — テキスト入力モードのみ')
   })
@@ -90,6 +95,10 @@ app.whenReady().then(async () => {
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
+  })
+
+  app.on('before-quit', () => {
+    orchestrator.endSession()
   })
 })
 

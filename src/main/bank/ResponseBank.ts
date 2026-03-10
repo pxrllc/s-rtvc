@@ -194,9 +194,19 @@ export class ResponseBank {
     this.listeningPool = LISTENING_DATA
   }
 
-  getOnset(intent: IntentCategory, confidence: number): ResponseEntry {
+  getOnset(
+    intent: IntentCategory,
+    confidence: number,
+    emotionTrend: 'positive' | 'negative' | 'neutral' = 'neutral'
+  ): ResponseEntry {
     // confidence が低い場合は傾聴フォールバック（文脈乖離を防ぐ）
     if (confidence < LISTENING_THRESHOLD) {
+      return this.pickFrom(this.listeningPool)
+    }
+
+    // ネガティブトレンド中は強いポジティブ・驚きリアクションを傾聴に落とす
+    const HIGH_ENERGY_INTENTS = new Set<IntentCategory>(['express_positive', 'express_surprise'])
+    if (emotionTrend === 'negative' && HIGH_ENERGY_INTENTS.has(intent)) {
       return this.pickFrom(this.listeningPool)
     }
 

@@ -5,11 +5,13 @@ import { AhoCorasickEngine, INTENT_PATTERNS } from '../../shared/intent-patterns
 import { ResponseBank } from '../bank/ResponseBank'
 import { VoicevoxClient } from '../tts/VoicevoxClient'
 import { AudioCache } from '../tts/AudioCache'
-import { GroqLLMClient } from '../llm/GroqLLMClient'
+import type { LLMProvider } from '../llm/LLMProvider'
 import { ConversationLogger } from '../logger/ConversationLogger'
 import { SyntaxRuleEngine } from '../intent/SyntaxRuleEngine'
 import { HookExtractor } from '../intent/HookExtractor'
 import { ShortTermMemory } from '../memory/ShortTermMemory'
+import { EpisodicMemoryStore } from '../memory/EpisodicMemoryStore'
+import { LongTermMemoryStore } from '../memory/LongTermMemoryStore'
 
 /** 話速設定（VOICEVOX speedScale: 0.5〜2.0、デフォルト 1.0） */
 const SPEED_ONSET = 1.2   // 相槌：やや速め
@@ -21,17 +23,22 @@ export class ConversationOrchestrator {
   private bank = new ResponseBank()
   private voicevox = new VoicevoxClient(1)
   private audioCache = new AudioCache()
-  private llm: GroqLLMClient | null = null
+  private llm: LLMProvider | null = null
   private logger: ConversationLogger
   private win: BrowserWindow
   private cacheReady = false
   private hookExtractor = new HookExtractor()
   private memory = new ShortTermMemory()
+  private episodic!: EpisodicMemoryStore
+  private longTerm!: LongTermMemoryStore
 
-  constructor(win: BrowserWindow, groqApiKey?: string) {
+  constructor(win: BrowserWindow, llmProvider: LLMProvider | null = null) {
     this.win = win
-    this.logger = new ConversationLogger(app.getPath('userData'))
-    if (groqApiKey) this.llm = new GroqLLMClient(groqApiKey)
+    const userDataPath = app.getPath('userData')
+    this.logger = new ConversationLogger(userDataPath)
+    this.episodic = new EpisodicMemoryStore(userDataPath)
+    this.longTerm = new LongTermMemoryStore(userDataPath)
+    this.llm = llmProvider
   }
 
   /** 起動時にWAVキャッシュをメモリ展開 */
@@ -58,7 +65,8 @@ export class ConversationOrchestrator {
     const result = this.syntax.apply(text, rawResult)
     const classifyMs = performance.now() - t0
 
-    const onsetEntry = this.bank.getOnset(result.intent, result.confidence)
+    const emotionTrend = this.memory.getEmotionTrend()
+    const onsetEntry = this.bank.getOnset(result.intent, result.confidence, emotionTrend)
 
     this.log('info', `[Intent] ${result.intent} conf=${result.confidence.toFixed(2)} (${classifyMs.toFixed(1)}ms)`)
     this.win.webContents.send('intent:result', result, classifyMs)
@@ -79,7 +87,10 @@ export class ConversationOrchestrator {
 
     // ── Step 2: LLM 即座に起動（並走） ───────────────────────────
     const llmStartTime = performance.now()
-    const memoryContext = this.memory.buildContext()
+    const currentHooks = this.memory.getAllHooks()
+    const episodicCtx = this.episodic.buildContextString(currentHooks)
+    const longTermCtx = this.longTerm.buildContextString()
+    const memoryContext = this.memory.buildContext(episodicCtx, longTermCtx)
     const llmPromise = this.llm
       ? this.llm.generate(text, memoryContext || undefined).catch(err => {
           this.log('error', `[LLM Error] ${err.message}`)
@@ -120,6 +131,26 @@ export class ConversationOrchestrator {
   private log(level: 'info' | 'warn' | 'error', message: string): void {
     console.log(`[Sentinel] ${message}`)
     this.win.webContents.send('log', level, message)
+  }
+
+  /** セッション終了時に呼ぶ — エピソード保存・長期記憶更新 */
+  endSession(): void {
+    const episodeData = this.memory.buildEpisode()
+    if (episodeData) {
+      this.episodic.saveEpisode({
+        id: `ep_${Date.now()}`,
+        timestamp: Date.now(),
+        date: new Date().toISOString().slice(0, 10),
+        ...episodeData,
+      })
+      this.log('info', `[Memory] エピソード保存 (${episodeData.turnCount}ターン / topics: ${episodeData.topics.join('、')})`)
+    }
+
+    const allHooks = this.memory.getAllHooks()
+    if (allHooks.length > 0) {
+      this.longTerm.updateFromSession(allHooks)
+      this.log('info', `[Memory] 長期記憶更新 (セッション${this.longTerm.sessionCount}回目)`)
+    }
   }
 
   async checkVoicevox(): Promise<boolean> {

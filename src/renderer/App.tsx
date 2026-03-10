@@ -99,6 +99,8 @@ export default function App() {
       micRef.current?.stop()
       micRef.current = null
       setMicState('idle')
+      playerRef.current?.stop()
+      setIsPlaying(false)
       return
     }
     const mic = new MicCapture()
