@@ -8,7 +8,34 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit",
-    "cache:build": "tsx --tsconfig tsconfig.node.json scripts/prebuild-cache.ts"
+    "cache:build": "tsx --tsconfig tsconfig.node.json scripts/prebuild-cache.ts",
+    "dist": "npm run build && electron-builder --win portable --config.artifactName=\"SentinelRTVC-v${version}b-win-x64.exe\""
+  },
+  "build": {
+    "appId": "com.sentinel.rtvc",
+    "productName": "Sentinel RTVC",
+    "copyright": "Sentinel RTVC",
+    "directories": {
+      "output": "dist-release"
+    },
+    "files": [
+      "out/**/*",
+      "cache/**/*",
+      {
+        "from": "node_modules",
+        "to": "node_modules",
+        "filter": ["koffi/**/*"]
+      }
+    ],
+    "extraResources": [
+      { "from": "cache/audio", "to": "cache/audio", "filter": ["**/*"] }
+    ],
+    "asarUnpack": [
+      "node_modules/koffi/**/*"
+    ],
+    "win": {
+      "target": "portable"
+    }
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
@@ -16,6 +43,7 @@
     "@types/react-dom": "^18.0.0",
     "@vitejs/plugin-react": "^4.0.0",
     "electron": "^29.0.0",
+    "electron-builder": "^26.8.1",
     "electron-vite": "^2.0.0",
     "tsx": "^4.21.0",
     "typescript": "^5.0.0",
