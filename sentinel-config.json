@@ -1,4 +1,5 @@
 {
   "ttsBaseUrl": "http://localhost:50032/v1",
-  "ttsProvider": "http"
+  "ttsProvider": "coeiroink",
+  "voicevoxSpeakerId": 0
 }

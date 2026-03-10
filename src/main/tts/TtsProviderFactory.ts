@@ -1,6 +1,6 @@
 /**
  * TtsProviderFactory
- * MAIN_VITE_TTS_PROVIDER=http|core (デフォルト: http)
+ * MAIN_VITE_TTS_PROVIDER=http|coeiroink|core (デフォルト: http)
  *
  * http モード共通設定:
  *   MAIN_VITE_TTS_BASE_URL  接続先URL (省略時: http://localhost:50021)
@@ -16,12 +16,20 @@
 import type { TtsProvider } from './TtsProvider'
 import { VoicevoxClient } from './VoicevoxClient'
 import { VoicevoxCoreClient } from './VoicevoxCoreClient'
+import { CoeiroinkClient } from './CoeiroinkClient'
 
 type Env = Record<string, string | undefined>
 
 export async function createTtsProvider(env: Env, speakerId = 1): Promise<TtsProvider> {
   const provider = (env.MAIN_VITE_TTS_PROVIDER ?? 'http').toLowerCase()
   const baseUrl = env.MAIN_VITE_TTS_BASE_URL
+
+  if (provider === 'coeiroink') {
+    const styleId = env.MAIN_VITE_VOICEVOX_SPEAKER_ID
+      ? parseInt(env.MAIN_VITE_VOICEVOX_SPEAKER_ID, 10)
+      : 0
+    return new CoeiroinkClient(baseUrl ?? 'http://localhost:50032/v1', styleId)
+  }
 
   if (provider === 'core') {
     const dllPath    = env.MAIN_VITE_VOICEVOX_CORE_DLL
