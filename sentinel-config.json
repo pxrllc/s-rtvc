@@ -1,0 +1,4 @@
+{
+  "ttsBaseUrl": "http://localhost:50032/v1",
+  "ttsProvider": "http"
+}

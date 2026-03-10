@@ -90,7 +90,7 @@ export class VoicevoxClient implements TtsProvider {
 
   async ping(): Promise<boolean> {
     try {
-      const res = await fetch(`${this.base}/version`)
+      const res = await fetch(`${this.base}/speakers`)
       return res.ok
     } catch {
       return false

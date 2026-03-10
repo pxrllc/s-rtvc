@@ -62,6 +62,8 @@ export function loadRuntimeConfig(): Config {
     _config = {}
     // 初回起動時にテンプレートを生成
     const template: Config = {
+      // VOICEVOX:   http://localhost:50021
+      // COEIROINK:  http://localhost:50032/v1
       ttsBaseUrl: 'http://localhost:50021',
       ttsProvider: 'http',
     }
