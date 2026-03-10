@@ -23,14 +23,14 @@
  */
 
 import { execSync } from 'child_process'
-import { mkdirSync, writeFileSync, rmSync, existsSync, cpSync } from 'fs'
+import { mkdirSync, writeFileSync, rmSync, existsSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { build } from 'esbuild'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
-const WORKTREE = join(ROOT, '.public-worktree')
+const WORKTREE = join(ROOT, '..', 's-rtvc-public-worktree')  // プロジェクト外
 const LIB_DIR  = 'src/lib'
 
 // ── 隠すファイル一覧（ROOT からの相対パス） ─────────────────────────────────
@@ -96,15 +96,21 @@ async function main() {
   if (existsSync(tmpOut)) rmSync(tmpOut, { recursive: true })
   mkdirSync(tmpOut)
 
+  // 全プライベートファイルを re-export する一時エントリポイントを生成
+  const entryContent = PRIVATE_FILES.map(f =>
+    `export * from '${join(ROOT, f).replace(/\\/g, '/')}'`
+  ).join('\n') + '\n'
+  const tmpEntry = join(tmpOut, '_entry.ts')
+  writeFileSync(tmpEntry, entryContent)
+
   await build({
-    entryPoints: PRIVATE_FILES.map(f => join(ROOT, f)),
+    entryPoints: [tmpEntry],
     bundle: true,
     minify: true,
     format: 'esm',
     platform: 'node',
     target: 'es2022',
     outfile: join(tmpOut, 'sentinel-engine.js'),
-    // 内部モジュールのみバンドル（外部依存は残す）
     packages: 'external',
   })
 
@@ -135,27 +141,9 @@ async function main() {
   // ── 5. ファイルをコピー ───────────────────────────────────────────────
   console.log('\n📁 ファイルをコピー中...')
 
-  // worktree をクリーン（.git は残す）
-  const entries = run(`git -C "${WORKTREE}" ls-files`).split('\n').filter(Boolean)
-  for (const f of entries) {
-    const p = join(WORKTREE, f)
-    if (existsSync(p)) rmSync(p)
-  }
-
-  // プロジェクト全体をコピー（node_modules, dist, cache 等は除外）
-  const EXCLUDE = [
-    'node_modules', 'dist', 'out', 'dist-electron',
-    'cache', '.tmp-engine-build', '.public-worktree',
-    '.git', 'sentinel-config.json',
-  ]
-
-  cpSync(ROOT, WORKTREE, {
-    recursive: true,
-    filter: (src) => {
-      const rel = src.replace(ROOT, '').replace(/\\/g, '/')
-      return !EXCLUDE.some(ex => rel.startsWith(`/${ex}`) || rel === `/${ex}`)
-    },
-  })
+  // git が追跡しているファイルのみ worktree へエクスポート
+  // （.git / node_modules / dist 等は自動で除外される）
+  run(`git checkout-index -a --force --prefix="${WORKTREE.replace(/\\/g, '/')}/"`)
 
   // ── 6. lib/ にビルド済みファイルを置く ───────────────────────────────
   const libDir = join(WORKTREE, LIB_DIR)

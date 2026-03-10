@@ -1,13 +1,7 @@
 node_modules/
-out/
 dist/
+out/
 dist-electron/
-dist-release/
-doc/
-.env
-.claude/
-cache/audio/*.wav
+cache/
 sentinel-config.json
-.tmp-engine-build/
-.public-worktree/
-src/lib/
+*.log
