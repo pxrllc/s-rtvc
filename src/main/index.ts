@@ -3,6 +3,7 @@ import { join } from 'path'
 import { ConversationOrchestrator } from './orchestrator/ConversationOrchestrator'
 import { GroqSTTClient } from './asr/GroqSTTClient'
 import { createLLMProvider } from './llm/LLMProviderFactory'
+import { createTtsProvider } from './tts/TtsProviderFactory'
 
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
@@ -33,7 +34,8 @@ app.whenReady().then(async () => {
   const win = createWindow()
   const env = import.meta.env as Record<string, string | undefined>
   const llmProvider = createLLMProvider(env)
-  const orchestrator = new ConversationOrchestrator(win, llmProvider)
+  const ttsProvider = await createTtsProvider(env)
+  const orchestrator = new ConversationOrchestrator(win, llmProvider, ttsProvider)
 
   const groqApiKey = env.MAIN_VITE_GROQ_API_KEY
   const validGroqKey = groqApiKey && groqApiKey !== 'your_groq_api_key_here' ? groqApiKey : undefined
@@ -41,9 +43,15 @@ app.whenReady().then(async () => {
 
   // 起動時初期化（VOICEVOX確認 + キャッシュロード）
   win.webContents.once('did-finish-load', async () => {
+    const ttsMode = (env.MAIN_VITE_TTS_PROVIDER ?? 'http').toLowerCase()
+    win.webContents.send('log', 'info', `[TTS] モード: ${ttsMode}`)
+
     const ok = await orchestrator.checkVoicevox()
     win.webContents.send('log', ok ? 'info' : 'error',
-      ok ? '[VOICEVOX] 接続OK' : '[VOICEVOX] 接続失敗 — localhost:50021 を確認してください')
+      ok
+        ? ttsMode === 'core' ? '[VOICEVOX Core] 初期化済み' : '[VOICEVOX] 接続OK'
+        : '[VOICEVOX] 初期化失敗 — 設定を確認してください'
+    )
 
     if (ok) await orchestrator.loadCache()
 

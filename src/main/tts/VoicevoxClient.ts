@@ -2,10 +2,11 @@
  * VOICEVOX Engine HTTP API クライアント
  * VOICEVOX Engine がローカルで起動していること前提（デフォルト: http://localhost:50021）
  */
+import type { TtsProvider } from './TtsProvider'
 
 const VOICEVOX_BASE = 'http://localhost:50021'
 
-export class VoicevoxClient {
+export class VoicevoxClient implements TtsProvider {
   private speakerId: number
 
   constructor(speakerId = 1) {

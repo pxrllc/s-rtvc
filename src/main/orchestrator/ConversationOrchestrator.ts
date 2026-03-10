@@ -5,6 +5,7 @@ import { AhoCorasickEngine, INTENT_PATTERNS } from '../../shared/intent-patterns
 import { ResponseBank } from '../bank/ResponseBank'
 import { VoicevoxClient } from '../tts/VoicevoxClient'
 import { AudioCache } from '../tts/AudioCache'
+import type { TtsProvider } from '../tts/TtsProvider'
 import type { LLMProvider } from '../llm/LLMProvider'
 import { ConversationLogger } from '../logger/ConversationLogger'
 import { SyntaxRuleEngine } from '../intent/SyntaxRuleEngine'
@@ -21,7 +22,7 @@ export class ConversationOrchestrator {
   private engine = new AhoCorasickEngine(INTENT_PATTERNS)
   private syntax = new SyntaxRuleEngine()
   private bank = new ResponseBank()
-  private voicevox = new VoicevoxClient(1)
+  private tts: TtsProvider
   private audioCache = new AudioCache()
   private llm: LLMProvider | null = null
   private logger: ConversationLogger
@@ -32,13 +33,18 @@ export class ConversationOrchestrator {
   private episodic!: EpisodicMemoryStore
   private longTerm!: LongTermMemoryStore
 
-  constructor(win: BrowserWindow, llmProvider: LLMProvider | null = null) {
+  constructor(
+    win: BrowserWindow,
+    llmProvider: LLMProvider | null = null,
+    ttsProvider?: TtsProvider
+  ) {
     this.win = win
     const userDataPath = app.getPath('userData')
     this.logger = new ConversationLogger(userDataPath)
     this.episodic = new EpisodicMemoryStore(userDataPath)
     this.longTerm = new LongTermMemoryStore(userDataPath)
     this.llm = llmProvider
+    this.tts = ttsProvider ?? new VoicevoxClient(1)
   }
 
   /** 起動時にWAVキャッシュをメモリ展開 */
@@ -106,7 +112,7 @@ export class ConversationOrchestrator {
       this.win.webContents.send('tts:pcm', cached.pcm, cached.sampleRate, 'onset')
       this.log('info', `[Onset] "${onsetEntry.text}" [CACHE ${(performance.now() - onsetT0).toFixed(1)}ms]`)
     } else {
-      const wav = await this.voicevox.synthesize(onsetEntry.text, SPEED_ONSET)
+      const wav = await this.tts.synthesize(onsetEntry.text, SPEED_ONSET)
       const { pcm, sampleRate } = VoicevoxClient.wavToFloat32(wav)
       this.win.webContents.send('tts:pcm', pcm, sampleRate, 'onset')
       this.log('info', `[Onset] "${onsetEntry.text}" [SYNTH ${(performance.now() - onsetT0).toFixed(0)}ms]`)
@@ -119,7 +125,7 @@ export class ConversationOrchestrator {
     if (llmText) {
       this.memory.updateLastLLMResponse(llmText)
       this.log('info', `[LLM] "${llmText}" (${llmMs.toFixed(0)}ms)`)
-      const llmWav = await this.voicevox.synthesize(llmText, SPEED_LLM)
+      const llmWav = await this.tts.synthesize(llmText, SPEED_LLM)
       const { pcm, sampleRate } = VoicevoxClient.wavToFloat32(llmWav)
       this.win.webContents.send('tts:pcm', pcm, sampleRate, 'llm')
       this.logger.logLLMResponse(llmText, llmMs)
@@ -154,6 +160,6 @@ export class ConversationOrchestrator {
   }
 
   async checkVoicevox(): Promise<boolean> {
-    return this.voicevox.ping()
+    return this.tts.ping()
   }
 }
