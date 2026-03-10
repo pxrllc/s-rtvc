@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { WebAudioPlayer } from './audio/WebAudioPlayer'
 import { MicCapture, type MicState } from './audio/MicCapture'
+import { SettingsPanel } from './SettingsPanel'
 
 type LogEntry = {
   id: number
@@ -28,6 +29,8 @@ declare global {
       onTranscript: (cb: (text: string) => void) => void
       onAsrStatus: (cb: (status: string) => void) => void
       removeAllListeners: () => void
+      getConfig: () => Promise<Record<string, unknown>>
+      saveConfig: (config: Record<string, unknown>) => Promise<void>
     }
   }
 }
@@ -42,6 +45,7 @@ export default function App() {
   const [micState, setMicState] = useState<MicState>('idle')
   const [asrStatus, setAsrStatus] = useState<'idle' | 'processing'>('idle')
   const [lastTranscript, setLastTranscript] = useState('')
+  const [showSettings, setShowSettings] = useState(false)
 
   const playerRef = useRef<WebAudioPlayer | null>(null)
   const micRef = useRef<MicCapture | null>(null)
@@ -63,31 +67,19 @@ export default function App() {
       setIsPlaying(true)
       playerRef.current!.enqueue(pcm, sampleRate, id)
     })
-
     window.sentinel.onTtsStop(() => {
       playerRef.current!.stop()
       setIsPlaying(false)
     })
-
-    // 再生状態の監視（簡易: pcm受信でon、1秒後にチェック）
-    const playingCheckInterval = setInterval(() => {
-      // WebAudioPlayer が isPlaying を公開していないので UI は受信ベースで更新
-    }, 1000)
-
     window.sentinel.onLog((level, message) => addLog(level as LogEntry['level'], message))
-
     window.sentinel.onIntentResult((result: unknown, latencyMs: number) => {
       const r = result as { intent: string; confidence: number }
       setIntent({ intent: r.intent, confidence: r.confidence, latencyMs })
     })
-
     window.sentinel.onTranscript(t => setLastTranscript(t))
     window.sentinel.onAsrStatus(s => setAsrStatus(s as 'idle' | 'processing'))
 
-    return () => {
-      clearInterval(playingCheckInterval)
-      window.sentinel.removeAllListeners()
-    }
+    return () => { window.sentinel.removeAllListeners() }
   }, [addLog])
 
   useEffect(() => {
@@ -134,11 +126,24 @@ export default function App() {
 
   return (
     <div style={styles.root}>
+      {/* ヘッダー */}
       <div style={styles.header}>
         <span style={styles.title}>Sentinel RTVC</span>
-        <span style={styles.subtitle}>v0.1.6 — 音声 / テキスト → Aho-Corasick + LLM → TTS</span>
+        <span style={styles.subtitle}>v0.1.6</span>
+        <div style={{ flex: 1 }} />
+        <button
+          style={styles.settingsBtn}
+          onClick={() => setShowSettings(s => !s)}
+          title="設定"
+        >⚙</button>
       </div>
 
+      {/* 設定パネル */}
+      {showSettings && (
+        <SettingsPanel onClose={() => setShowSettings(false)} />
+      )}
+
+      {/* ステータスバー */}
       <div style={styles.statusBar}>
         {intent ? (
           <span style={styles.intentBadge}>
@@ -204,9 +209,10 @@ function logColor(level: LogEntry['level']) {
 
 const styles: Record<string, React.CSSProperties> = {
   root: { display: 'flex', flexDirection: 'column', height: '100vh', background: '#0f0f0f', color: '#e0e0e0', fontFamily: 'monospace' },
-  header: { padding: '10px 16px', borderBottom: '1px solid #222', display: 'flex', alignItems: 'baseline', gap: '12px' },
+  header: { padding: '10px 16px', borderBottom: '1px solid #222', display: 'flex', alignItems: 'center', gap: '12px' },
   title: { fontSize: '18px', fontWeight: 700, color: '#fff' },
   subtitle: { fontSize: '11px', color: '#555' },
+  settingsBtn: { background: 'none', border: '1px solid #333', color: '#888', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '16px', lineHeight: 1 },
   statusBar: { padding: '6px 16px', borderBottom: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', gap: '16px', minHeight: '34px', flexWrap: 'wrap' },
   intentBadge: { display: 'flex', gap: '8px', alignItems: 'center', background: '#1a2a1a', padding: '3px 10px', borderRadius: '4px' },
   intentLabel: { color: '#6fcf6f', fontWeight: 700, fontSize: '13px' },

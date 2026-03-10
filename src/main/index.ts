@@ -4,8 +4,8 @@ import { ConversationOrchestrator } from './orchestrator/ConversationOrchestrato
 import { GroqSTTClient } from './asr/GroqSTTClient'
 import { createLLMProvider } from './llm/LLMProviderFactory'
 import { createTtsProvider } from './tts/TtsProviderFactory'
-import { mergeConfig } from './config/RuntimeConfig'
-
+import { mergeConfig, loadRuntimeConfig, saveRuntimeConfig } from './config/RuntimeConfig'
+import type { Config } from './config/RuntimeConfig'
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
 
@@ -31,9 +31,16 @@ function createWindow(): BrowserWindow {
   return win
 }
 
-app.whenReady().then(async () => {
-  const win = createWindow()
+// ── サービス再初期化（起動時 + 設定変更時に呼ぶ） ─────────────────────────
+
+type Services = {
+  orchestrator: ConversationOrchestrator
+  stt: GroqSTTClient | null
+}
+
+async function initServices(win: BrowserWindow): Promise<Services> {
   const env = mergeConfig(import.meta.env as Record<string, string | undefined>)
+
   const llmProvider = createLLMProvider(env)
   const ttsProvider = await createTtsProvider(env)
   const orchestrator = new ConversationOrchestrator(win, llmProvider, ttsProvider)
@@ -42,55 +49,62 @@ app.whenReady().then(async () => {
   const validGroqKey = groqApiKey && groqApiKey !== 'your_groq_api_key_here' ? groqApiKey : undefined
   const stt = validGroqKey ? new GroqSTTClient(validGroqKey) : null
 
-  // 起動時初期化（VOICEVOX確認 + キャッシュロード）
+  const ttsMode = (env.MAIN_VITE_TTS_PROVIDER ?? 'http').toLowerCase()
+  const ttsBase = env.MAIN_VITE_TTS_BASE_URL ?? 'http://localhost:50021'
+  win.webContents.send('log', 'info', `[TTS] ${ttsMode} — ${ttsBase}`)
+
+  const ok = await orchestrator.checkVoicevox()
+  win.webContents.send('log', ok ? 'info' : 'error',
+    ok ? `[TTS] 接続OK (${ttsBase})` : `[TTS] 接続失敗 — ${ttsBase} を確認してください`
+  )
+  if (ok) await orchestrator.loadCache()
+
+  win.webContents.send('log', llmProvider ? 'info' : 'warn',
+    llmProvider
+      ? `[LLM] ${llmProvider.providerName} / ${llmProvider.modelName}`
+      : '[LLM] プロバイダー未設定 — LLMなしモード'
+  )
+  win.webContents.send('log', stt ? 'info' : 'warn',
+    stt ? '[Groq STT] APIキー設定済み' : '[Groq STT] APIキー未設定 — テキスト入力モードのみ'
+  )
+
+  return { orchestrator, stt }
+}
+
+// ── アプリ起動 ────────────────────────────────────────────────────────────
+
+app.whenReady().then(async () => {
+  const win = createWindow()
+
+  // 現在のサービスインスタンスを mutable 参照で持つ
+  let services: Services | null = null
+
   win.webContents.once('did-finish-load', async () => {
-    const ttsMode = (env.MAIN_VITE_TTS_PROVIDER ?? 'http').toLowerCase()
-    const ttsBase = env.MAIN_VITE_TTS_BASE_URL ?? 'http://localhost:50021'
-    win.webContents.send('log', 'info', `[TTS] ${ttsMode} — ${ttsBase}`)
-
-    const ok = await orchestrator.checkVoicevox()
-    win.webContents.send('log', ok ? 'info' : 'error',
-      ok
-        ? ttsMode === 'core' ? '[VOICEVOX Core] 初期化済み' : `[TTS] 接続OK (${ttsBase})`
-        : `[TTS] 接続失敗 — ${ttsBase} を確認してください`
-    )
-
-    if (ok) await orchestrator.loadCache()
-
-    win.webContents.send('log', llmProvider ? 'info' : 'warn',
-      llmProvider ? `[LLM] ${llmProvider.providerName} / ${llmProvider.modelName}` : '[LLM] プロバイダー未設定 — LLMなしモード')
-    win.webContents.send('log', stt ? 'info' : 'warn',
-      stt ? '[Groq STT] APIキー設定済み' : '[Groq STT] APIキー未設定 — テキスト入力モードのみ')
+    services = await initServices(win)
   })
 
-  // テキスト入力
+  // ── テキスト入力 ───────────────────────────────────────────────────
   ipcMain.on('text:submit', (_event, text: string) => {
-    orchestrator.onText(text).catch(err => {
+    services?.orchestrator.onText(text).catch(err => {
       win.webContents.send('log', 'error', `[Error] ${err.message}`)
     })
   })
 
-  // 音声入力 (VAD確定後の webm blob)
+  // ── 音声入力 ───────────────────────────────────────────────────────
   ipcMain.on('asr:audio', async (_event, audioBuffer: ArrayBuffer) => {
-    if (!stt) {
+    if (!services?.stt) {
       win.webContents.send('log', 'warn', '[STT] APIキー未設定のためスキップ')
       return
     }
-
     win.webContents.send('asr:status', 'processing')
-
     const t0 = performance.now()
     try {
-      const text = await stt.transcribe(audioBuffer)
+      const text = await services.stt.transcribe(audioBuffer)
       const groqMs = performance.now() - t0
-
       win.webContents.send('log', 'info', `[Groq STT] "${text}" (${groqMs.toFixed(0)}ms)`)
       win.webContents.send('asr:transcript', text)
       win.webContents.send('asr:status', 'listening')
-
-      if (text) {
-        await orchestrator.onText(text)
-      }
+      if (text) await services.orchestrator.onText(text)
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err)
       win.webContents.send('log', 'error', `[STT Error] ${msg}`)
@@ -98,9 +112,21 @@ app.whenReady().then(async () => {
     }
   })
 
-  // TTS 停止
+  // ── TTS 停止 ────────────────────────────────────────────────────────
   ipcMain.on('tts:stop_request', () => {
     win.webContents.send('tts:stop')
+  })
+
+  // ── 設定取得 ────────────────────────────────────────────────────────
+  ipcMain.handle('config:get', () => loadRuntimeConfig())
+
+  // ── 設定保存 → サービス再初期化 ────────────────────────────────────
+  ipcMain.handle('config:save', async (_event, config: Config) => {
+    saveRuntimeConfig(config)
+    win.webContents.send('log', 'info', '[Config] 設定を保存しました。サービスを再起動中...')
+    services?.orchestrator.endSession()
+    services = await initServices(win)
+    win.webContents.send('log', 'info', '[Config] 再起動完了')
   })
 
   app.on('activate', () => {
@@ -108,7 +134,7 @@ app.whenReady().then(async () => {
   })
 
   app.on('before-quit', () => {
-    orchestrator.endSession()
+    services?.orchestrator.endSession()
   })
 })
 

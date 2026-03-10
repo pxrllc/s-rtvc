@@ -5,6 +5,9 @@ contextBridge.exposeInMainWorld('sentinel', {
   submitAudio: (arrayBuffer: ArrayBuffer) => ipcRenderer.send('asr:audio', arrayBuffer),
   stopTts: () => ipcRenderer.send('tts:stop_request'),
 
+  getConfig: () => ipcRenderer.invoke('config:get'),
+  saveConfig: (config: unknown) => ipcRenderer.invoke('config:save', config),
+
   onPcm: (cb: (pcm: Float32Array, sampleRate: number, id: string) => void) => {
     ipcRenderer.on('tts:pcm', (_e, pcm, sampleRate, id) => cb(pcm, sampleRate, id))
   },

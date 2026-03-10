@@ -78,6 +78,13 @@ export function loadRuntimeConfig(): Config {
   return _config
 }
 
+/** 設定を sentinel-config.json に保存してキャッシュをリセット */
+export function saveRuntimeConfig(config: Config): void {
+  _config = config
+  const configPath = getConfigPath()
+  writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8')
+}
+
 /** env変数とruntime configをマージ。runtime configが優先 */
 export function mergeConfig(env: Record<string, string | undefined>): Record<string, string | undefined> {
   const rc = loadRuntimeConfig()

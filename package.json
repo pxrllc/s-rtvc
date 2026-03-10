@@ -9,7 +9,8 @@
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit",
     "cache:build": "tsx --tsconfig tsconfig.node.json scripts/prebuild-cache.ts",
-    "dist": "npm run build && electron-builder --win portable --config.artifactName=\"SentinelRTVC-v${version}b-win-x64.exe\""
+    "dist": "npm run build && electron-builder --win portable --config.artifactName=\"SentinelRTVC-v${version}b-win-x64.exe\"",
+    "sync:public": "tsx --tsconfig tsconfig.node.json scripts/sync-public.ts"
   },
   "build": {
     "appId": "com.sentinel.rtvc",
