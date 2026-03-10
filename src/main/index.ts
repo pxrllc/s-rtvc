@@ -36,17 +36,16 @@ app.whenReady().then(async () => {
 
   const stt = validKey ? new GroqSTTClient(validKey) : null
 
-  // VOICEVOX 疎通確認
+  // 起動時初期化（VOICEVOX確認 + キャッシュロード）
   win.webContents.once('did-finish-load', async () => {
     const ok = await orchestrator.checkVoicevox()
     win.webContents.send('log', ok ? 'info' : 'error',
       ok ? '[VOICEVOX] 接続OK' : '[VOICEVOX] 接続失敗 — localhost:50021 を確認してください')
 
-    if (stt) {
-      win.webContents.send('log', 'info', '[Groq STT] APIキー設定済み')
-    } else {
-      win.webContents.send('log', 'warn', '[Groq STT] APIキー未設定 — テキスト入力モードのみ')
-    }
+    if (ok) await orchestrator.loadCache()
+
+    win.webContents.send('log', stt ? 'info' : 'warn',
+      stt ? '[Groq STT] APIキー設定済み' : '[Groq STT] APIキー未設定 — テキスト入力モードのみ')
   })
 
   // テキスト入力

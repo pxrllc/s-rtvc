@@ -1,0 +1,617 @@
+{
+  "version": 1,
+  "speakerId": 1,
+  "generatedAt": "2026-03-10T07:32:35.726Z",
+  "entries": [
+    {
+      "text": "なるほど",
+      "file": "0001.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "なるほどね",
+      "file": "0002.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "たしかに",
+      "file": "0003.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "たしかにね",
+      "file": "0004.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "うんうん",
+      "file": "0005.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "うん、うん",
+      "file": "0006.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "そうだよね",
+      "file": "0007.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "だよね",
+      "file": "0008.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "やあ",
+      "file": "0009.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "おう",
+      "file": "0010.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "こんにちは",
+      "file": "0011.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "よ",
+      "file": "0012.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "おー、久しぶり",
+      "file": "0013.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "ひさしぶり",
+      "file": "0014.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "またね",
+      "file": "0015.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "じゃあね",
+      "file": "0016.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "おつかれ",
+      "file": "0017.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "おつかれさま",
+      "file": "0018.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "またいつでも",
+      "file": "0019.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "いつでも来てね",
+      "file": "0020.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "いいね",
+      "file": "0021.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "いいじゃん",
+      "file": "0022.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "それ最高",
+      "file": "0023.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "すごいじゃん",
+      "file": "0024.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "やるじゃん",
+      "file": "0025.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "すごいね",
+      "file": "0026.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "うれしいね",
+      "file": "0027.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "よかった",
+      "file": "0028.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "それはきつい",
+      "file": "0029.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "つらいね",
+      "file": "0030.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "大変だったね",
+      "file": "0031.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "それは大変",
+      "file": "0032.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "うわ、それは",
+      "file": "0033.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "うわー",
+      "file": "0034.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "しんどいね",
+      "file": "0035.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "きついね",
+      "file": "0036.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "えっ、マジで",
+      "file": "0037.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "うそ",
+      "file": "0038.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "ほんとに",
+      "file": "0039.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "まじか",
+      "file": "0040.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "えー！",
+      "file": "0041.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "うわっ",
+      "file": "0042.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "びっくりした",
+      "file": "0043.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "それは知らなかった",
+      "file": "0044.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "それはムカつく",
+      "file": "0045.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "わかるそれ",
+      "file": "0046.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "それはひどい",
+      "file": "0047.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "ありえないね",
+      "file": "0048.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "わかるわー",
+      "file": "0049.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "めんどいね",
+      "file": "0050.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "イライラするね",
+      "file": "0051.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "それはしんどい",
+      "file": "0052.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "えっとね",
+      "file": "0053.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "そうだな",
+      "file": "0054.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "うーん",
+      "file": "0055.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "ちょっと待って",
+      "file": "0056.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "それはね",
+      "file": "0057.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "確かそれは",
+      "file": "0058.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "個人的には",
+      "file": "0059.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "正直言うと",
+      "file": "0060.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "うーん、そうだな",
+      "file": "0061.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "どうだろう",
+      "file": "0062.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "ぶっちゃけ",
+      "file": "0063.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "率直に言うと",
+      "file": "0064.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "そうだなぁ",
+      "file": "0065.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "やり方としては",
+      "file": "0066.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "ポイントは",
+      "file": "0067.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "コツとしては",
+      "file": "0068.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "わかった",
+      "file": "0069.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "了解",
+      "file": "0070.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "やってみる",
+      "file": "0071.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "やっておく",
+      "file": "0072.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "まかせて",
+      "file": "0073.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "オッケー",
+      "file": "0074.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "説明すると",
+      "file": "0075.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "わかりやすく言うと",
+      "file": "0076.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "そうだね",
+      "file": "0077.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "かいつまんで",
+      "file": "0078.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "ざっくり言うと",
+      "file": "0079.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "それで",
+      "file": "0080.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "うん、それで",
+      "file": "0081.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "うん、続きは",
+      "file": "0082.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "ほんで？",
+      "file": "0083.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "なるほど、で",
+      "file": "0084.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "それで？",
+      "file": "0085.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "あ、そっちね",
+      "file": "0086.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "話変わるね",
+      "file": "0087.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "ほお",
+      "file": "0088.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "そういえば",
+      "file": "0089.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "急に話変わるけど",
+      "file": "0090.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "そこ気になる",
+      "file": "0091.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "もう少し聞いて",
+      "file": "0092.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "それ詳しく",
+      "file": "0093.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "もっと教えて",
+      "file": "0094.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "なんで？",
+      "file": "0095.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "理由は？",
+      "file": "0096.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "何があったの",
+      "file": "0097.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "聞かせて",
+      "file": "0098.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "うそ、それ",
+      "file": "0099.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "あ、それは",
+      "file": "0100.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "そうなんだ",
+      "file": "0101.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "面白そう",
+      "file": "0102.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "気になる",
+      "file": "0103.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "確認すると",
+      "file": "0104.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "つまりね",
+      "file": "0105.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "言い換えると",
+      "file": "0106.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "そういうこと？",
+      "file": "0107.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "ってこと？",
+      "file": "0108.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "うーん、どうかな",
+      "file": "0109.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "そうかなあ",
+      "file": "0110.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "むずかしいね",
+      "file": "0111.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "一概には",
+      "file": "0112.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "でもさ",
+      "file": "0113.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "へえ",
+      "file": "0114.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "そっかー",
+      "file": "0115.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "そっか",
+      "file": "0116.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "うん",
+      "file": "0117.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "あ、なるほど",
+      "file": "0118.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "ふーん",
+      "file": "0119.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "それはそれは",
+      "file": "0120.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "マジで",
+      "file": "0121.wav",
+      "sampleRate": 24000
+    },
+    {
+      "text": "ほんとに？",
+      "file": "0122.wav",
+      "sampleRate": 24000
+    }
+  ]
+}
