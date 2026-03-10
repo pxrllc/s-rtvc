@@ -23,7 +23,7 @@
  */
 
 import { execSync } from 'child_process'
-import { mkdirSync, writeFileSync, rmSync, existsSync } from 'fs'
+import { mkdirSync, writeFileSync, rmSync, existsSync, copyFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { build } from 'esbuild'
@@ -148,8 +148,8 @@ async function main() {
   // ── 6. lib/ にビルド済みファイルを置く ───────────────────────────────
   const libDir = join(WORKTREE, LIB_DIR)
   mkdirSync(libDir, { recursive: true })
-  cpSync(join(tmpOut, 'sentinel-engine.js'),      join(libDir, 'sentinel-engine.js'))
-  cpSync(join(tmpOut, 'sentinel-engine.d.ts'),    join(libDir, 'sentinel-engine.d.ts'))
+  copyFileSync(join(tmpOut, 'sentinel-engine.js'),   join(libDir, 'sentinel-engine.js'))
+  copyFileSync(join(tmpOut, 'sentinel-engine.d.ts'), join(libDir, 'sentinel-engine.d.ts'))
   console.log('   ✓ sentinel-engine.js / .d.ts コピー完了')
 
   // ── 7. プライベートファイルをスタブに差し替え ───────────────────────
