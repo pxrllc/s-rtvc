@@ -158,7 +158,12 @@ async function main() {
   }
   console.log('   ✓ プライベートファイルをスタブに差し替え完了')
 
-  // ── 8. .gitignore 追記（worktree 用） ───────────────────────────────
+  // ── 8. doc/ ディレクトリを削除（非公開） ────────────────────────────
+  const docDir = join(WORKTREE, 'doc')
+  if (existsSync(docDir)) rmSync(docDir, { recursive: true })
+  console.log('   ✓ doc/ を削除')
+
+  // ── 9. .gitignore 追記（worktree 用） ───────────────────────────────
   const gitignorePublic = [
     'node_modules/',
     'dist/',
@@ -170,7 +175,7 @@ async function main() {
   ].join('\n') + '\n'
   writeFileSync(join(WORKTREE, '.gitignore'), gitignorePublic)
 
-  // ── 9. コミット & プッシュ ────────────────────────────────────────────
+  // ── 10. コミット & プッシュ ────────────────────────────────────────────
   console.log('\n🚀 コミット & プッシュ中...')
   const date = new Date().toISOString().slice(0, 10)
   try {
@@ -183,7 +188,7 @@ async function main() {
     console.error('   ✗ push 失敗:', msg)
   }
 
-  // ── 10. クリーンアップ ───────────────────────────────────────────────
+  // ── 11. クリーンアップ ───────────────────────────────────────────────
   run(`git worktree remove --force "${WORKTREE}"`)
   rmSync(tmpOut, { recursive: true })
 
