@@ -1,27 +1,44 @@
 /**
  * scripts/prebuild-cache.ts
  *
- * 全 onset テキストを VOICEVOX で事前合成して cache/audio/ に保存する。
+ * 全 onset テキストを事前合成して cache/audio/ に保存する。
  * 実行: npm run cache:build
  *
- * VOICEVOX Engine が localhost:50021 で起動している必要あり。
+ * TTS バックエンドは sentinel-config.json の設定に従う:
+ *   - ttsProvider: "http"       → VOICEVOX (localhost:50021)
+ *   - ttsProvider: "coeiroink"  → COEIROINK (localhost:50032/v1)
  */
 
-import { writeFileSync, mkdirSync, existsSync } from 'fs'
+import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PROJECT_ROOT = join(__dirname, '..')
 const CACHE_DIR = join(PROJECT_ROOT, 'cache', 'audio')
-const VOICEVOX_BASE = 'http://localhost:50021'
-const SPEAKER_ID = 1   // ずんだもん
 const SPEED_ONSET = 1.2  // ConversationOrchestrator の SPEED_ONSET と合わせること
 
-// ── ResponseBank から全 onset テキストを収集 ────────────────────────
-// ※ ResponseBank を直接 import せず、テキスト一覧を独立して管理することで
-//    スクリプトの依存を最小にする
+// ── sentinel-config.json を読む ────────────────────────────────────
+type Config = {
+  ttsProvider?: string
+  ttsBaseUrl?: string
+  voicevoxSpeakerId?: number
+}
 
+function loadConfig(): Config {
+  const path = join(PROJECT_ROOT, 'sentinel-config.json')
+  if (existsSync(path)) {
+    try { return JSON.parse(readFileSync(path, 'utf-8')) } catch { /**/ }
+  }
+  return {}
+}
+
+const cfg = loadConfig()
+const TTS_PROVIDER = cfg.ttsProvider ?? 'http'
+const TTS_BASE     = (cfg.ttsBaseUrl ?? 'http://localhost:50021').replace(/\/$/, '')
+const STYLE_ID     = cfg.voicevoxSpeakerId ?? (TTS_PROVIDER === 'coeiroink' ? 0 : 1)
+
+// ── onset テキスト一覧 ────────────────────────────────────────────
 const ONSET_TEXTS: string[] = [
   // acknowledgment
   'なるほど', 'なるほどね', 'たしかに', 'たしかにね',
@@ -88,15 +105,18 @@ const ONSET_TEXTS: string[] = [
   'へえ', 'そっかー', 'そっか', 'うんうん', 'うん',
   'そうなんだ', 'あ、なるほど', 'なるほど', 'ふーん',
   'それはそれは', 'マジで', 'ほんとに？',
+
+  // listening pool
+  'うん', 'そう', 'ね', 'うんうん', 'そっか',
+  'たしかに', 'なるほど', 'うんうん', 'そうだよね', 'だよね', 'ふむ',
 ]
 
-// 重複除去
 const UNIQUE_TEXTS = [...new Set(ONSET_TEXTS)]
 
 // ── VOICEVOX 合成 ─────────────────────────────────────────────────
-async function synthesize(text: string): Promise<Buffer> {
+async function synthesizeVoicevox(text: string): Promise<Buffer> {
   const queryRes = await fetch(
-    `${VOICEVOX_BASE}/audio_query?text=${encodeURIComponent(text)}&speaker=${SPEAKER_ID}`,
+    `${TTS_BASE}/audio_query?text=${encodeURIComponent(text)}&speaker=${STYLE_ID}`,
     { method: 'POST' }
   )
   if (!queryRes.ok) throw new Error(`audio_query failed: ${queryRes.status}`)
@@ -104,33 +124,73 @@ async function synthesize(text: string): Promise<Buffer> {
   query.speedScale = SPEED_ONSET
 
   const synthRes = await fetch(
-    `${VOICEVOX_BASE}/synthesis?speaker=${SPEAKER_ID}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(query)
-    }
+    `${TTS_BASE}/synthesis?speaker=${STYLE_ID}`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(query) }
   )
   if (!synthRes.ok) throw new Error(`synthesis failed: ${synthRes.status}`)
-
   return Buffer.from(await synthRes.arrayBuffer())
 }
 
-// ── メイン処理 ────────────────────────────────────────────────────
+// ── COEIROINK 合成 ────────────────────────────────────────────────
+let _speakerUuid: string | null = null
+async function resolveSpeakerUuid(): Promise<string> {
+  if (_speakerUuid) return _speakerUuid
+  const res = await fetch(`${TTS_BASE}/speakers`)
+  if (!res.ok) throw new Error(`/speakers failed: ${res.status}`)
+  const speakers: Array<{ speakerUuid: string; styles: { styleId: number }[] }> = await res.json()
+  for (const s of speakers) {
+    if (s.styles.some(st => st.styleId === STYLE_ID)) {
+      _speakerUuid = s.speakerUuid
+      return _speakerUuid
+    }
+  }
+  if (speakers.length > 0) _speakerUuid = speakers[0].speakerUuid
+  else throw new Error('No speakers found')
+  return _speakerUuid!
+}
+
+async function synthesizeCoeiroink(text: string): Promise<Buffer> {
+  const speakerUuid = await resolveSpeakerUuid()
+  const res = await fetch(`${TTS_BASE}/predict`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ speakerUuid, styleId: STYLE_ID, text, speedScale: SPEED_ONSET }),
+  })
+  if (!res.ok) throw new Error(`/predict failed: ${res.status} ${await res.text()}`)
+  return Buffer.from(await res.arrayBuffer())
+}
+
+// ── 合成ディスパッチ ──────────────────────────────────────────────
+async function synthesize(text: string): Promise<Buffer> {
+  return TTS_PROVIDER === 'coeiroink'
+    ? synthesizeCoeiroink(text)
+    : synthesizeVoicevox(text)
+}
+
+// ── 疎通確認 ──────────────────────────────────────────────────────
+async function pingCheck(): Promise<void> {
+  const url = TTS_PROVIDER === 'coeiroink'
+    ? `${TTS_BASE}/speakers`
+    : `${TTS_BASE}/version`
+  try {
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const label = TTS_PROVIDER === 'coeiroink' ? 'COEIROINK' : 'VOICEVOX'
+    console.log(`✅ ${label} (${TTS_BASE})`)
+  } catch (e) {
+    console.error(`❌ TTS サーバーに接続できません: ${TTS_BASE}`)
+    process.exit(1)
+  }
+}
+
+// ── メイン ────────────────────────────────────────────────────────
 async function main() {
   console.log(`\n🎙  Sentinel RTVC — onset WAV キャッシュ生成`)
+  console.log(`   provider: ${TTS_PROVIDER}  base: ${TTS_BASE}  styleId/speakerId: ${STYLE_ID}`)
   console.log(`   対象テキスト数: ${UNIQUE_TEXTS.length}`)
   console.log(`   出力先: ${CACHE_DIR}\n`)
 
-  // VOICEVOX 疎通確認
-  try {
-    const res = await fetch(`${VOICEVOX_BASE}/version`)
-    const ver = await res.text()
-    console.log(`✅ VOICEVOX Engine: ${ver.trim()}`)
-  } catch {
-    console.error('❌ VOICEVOX Engine に接続できません (localhost:50021)')
-    process.exit(1)
-  }
+  await pingCheck()
 
   if (!existsSync(CACHE_DIR)) mkdirSync(CACHE_DIR, { recursive: true })
 
@@ -149,11 +209,8 @@ async function main() {
       const t = Date.now()
       const wav = await synthesize(text)
       writeFileSync(outPath, wav)
-
-      // WAV ヘッダーからサンプルレートを読む
       const sampleRate = wav.readUInt32LE(24)
       entries.push({ text, file, sampleRate })
-
       console.log(`✓ (${Date.now() - t}ms)`)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
@@ -162,10 +219,10 @@ async function main() {
     }
   }
 
-  // manifest.json 保存
   const manifest = {
     version: 1,
-    speakerId: SPEAKER_ID,
+    provider: TTS_PROVIDER,
+    speakerId: STYLE_ID,
     generatedAt: new Date().toISOString(),
     entries
   }
@@ -173,9 +230,7 @@ async function main() {
 
   const elapsed = ((Date.now() - t0) / 1000).toFixed(1)
   console.log(`\n✅ 完了: ${entries.length}件 / ${elapsed}s`)
-  if (errors.length > 0) {
-    console.log(`⚠  失敗: ${errors.length}件 — ${errors.join(', ')}`)
-  }
+  if (errors.length > 0) console.log(`⚠  失敗: ${errors.length}件 — ${errors.join(', ')}`)
   console.log(`   manifest: ${join(CACHE_DIR, 'manifest.json')}`)
 }
 
