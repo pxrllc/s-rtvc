@@ -3,6 +3,7 @@ import { join } from 'path'
 import { ConversationOrchestrator } from './orchestrator/ConversationOrchestrator'
 import { GroqSTTClient } from './asr/GroqSTTClient'
 
+
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
 
 function createWindow(): BrowserWindow {
@@ -29,12 +30,11 @@ function createWindow(): BrowserWindow {
 
 app.whenReady().then(async () => {
   const win = createWindow()
-  const orchestrator = new ConversationOrchestrator(win)
-
   const groqApiKey = import.meta.env.MAIN_VITE_GROQ_API_KEY as string | undefined
-  const stt = groqApiKey && groqApiKey !== 'your_groq_api_key_here'
-    ? new GroqSTTClient(groqApiKey)
-    : null
+  const validKey = groqApiKey && groqApiKey !== 'your_groq_api_key_here' ? groqApiKey : undefined
+  const orchestrator = new ConversationOrchestrator(win, validKey)
+
+  const stt = validKey ? new GroqSTTClient(validKey) : null
 
   // VOICEVOX 疎通確認
   win.webContents.once('did-finish-load', async () => {

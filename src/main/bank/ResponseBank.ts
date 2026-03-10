@@ -2,85 +2,170 @@ import type { IntentCategory } from '../../shared/intent-patterns'
 import type { ResponseEntry } from '../../shared/types'
 
 // =========================================================
-// MVP onset データ（各意図カテゴリの代表フレーズ）
+// ヘルパー: エントリを簡潔に書くための型
+// =========================================================
+type OnsetDef = [
+  id: string,
+  intent: IntentCategory,
+  text: string,           // 短いほど合成が速い（目標: 2-8文字）
+  variants: string[],
+  cooldownMs: number
+]
+
+function onset(
+  id: string,
+  intent: IntentCategory,
+  text: string,
+  variants: string[],
+  cooldownMs: number,
+  emotion: ResponseEntry['emotion'] = 'neutral',
+  energy: ResponseEntry['energy'] = 'mid'
+): ResponseEntry {
+  return {
+    id, intent, domain: 'universal', category: 'aizuchi', stage: 'onset',
+    text, textVariants: variants,
+    requiresSynthesis: false,
+    emotion, energy, formality: 'casual', topicTags: [],
+    usageCount: 0, cooldownMs
+  }
+}
+
+// =========================================================
+// Onset データ
+// ※ テキストは短いほど VOICEVOX 合成が速い
 // =========================================================
 const ONSET_DATA: ResponseEntry[] = [
-  // acknowledgment
-  { id: 'onset_ack_001', intent: 'acknowledgment', domain: 'universal', category: 'aizuchi', stage: 'onset', text: 'なるほど', textVariants: ['なるほどね', 'なるほどなるほど'], requiresSynthesis: false, emotion: 'neutral', energy: 'mid', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 10000 },
-  { id: 'onset_ack_002', intent: 'acknowledgment', domain: 'universal', category: 'aizuchi', stage: 'onset', text: 'うん、うん', textVariants: ['うんうん'], requiresSynthesis: false, emotion: 'neutral', energy: 'low', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 8000 },
-  { id: 'onset_ack_003', intent: 'acknowledgment', domain: 'universal', category: 'aizuchi', stage: 'onset', text: 'たしかに', textVariants: ['たしかにね'], requiresSynthesis: false, emotion: 'neutral', energy: 'mid', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 12000 },
 
-  // greeting
-  { id: 'onset_greet_001', intent: 'greeting', domain: 'universal', category: 'aizuchi', stage: 'onset', text: 'やあ、こんにちは', textVariants: ['よ、元気？'], requiresSynthesis: false, emotion: 'positive', energy: 'mid', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 5000 },
+  // ── acknowledgment（了解・同意）── 4エントリ
+  onset('ack_01', 'acknowledgment', 'なるほど',    ['なるほどね'],         8000),
+  onset('ack_02', 'acknowledgment', 'たしかに',    ['たしかにね'],         10000),
+  onset('ack_03', 'acknowledgment', 'うんうん',    ['うん、うん'],         6000),
+  onset('ack_04', 'acknowledgment', 'そうだよね',  ['だよね'],             9000),
 
-  // farewell
-  { id: 'onset_fare_001', intent: 'farewell', domain: 'universal', category: 'aizuchi', stage: 'onset', text: 'またね', textVariants: ['じゃあね'], requiresSynthesis: false, emotion: 'neutral', energy: 'mid', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 5000 },
+  // ── greeting（挨拶）── 3エントリ
+  onset('greet_01', 'greeting', 'やあ',         ['おう'],               5000, 'positive'),
+  onset('greet_02', 'greeting', 'こんにちは',    ['よ'],                 5000, 'positive', 'high'),
+  onset('greet_03', 'greeting', 'おー、久しぶり', ['ひさしぶり'],         5000, 'positive'),
 
-  // express_positive
-  { id: 'onset_pos_001', intent: 'express_positive', domain: 'universal', category: 'aizuchi', stage: 'onset', text: 'それ、いいね', textVariants: ['いいじゃん'], requiresSynthesis: false, emotion: 'positive', energy: 'high', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 10000 },
+  // ── farewell（別れ）── 3エントリ
+  onset('fare_01', 'farewell', 'またね',     ['じゃあね'],           5000),
+  onset('fare_02', 'farewell', 'おつかれ',   ['おつかれさま'],       5000),
+  onset('fare_03', 'farewell', 'またいつでも', ['いつでも来てね'],     5000),
 
-  // express_negative
-  { id: 'onset_neg_001', intent: 'express_negative', domain: 'universal', category: 'empathy', stage: 'onset', text: 'それは大変だね', textVariants: ['うわ、それはキツいね', 'それは辛いね'], requiresSynthesis: false, emotion: 'negative', energy: 'mid', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 15000 },
+  // ── express_positive（ポジティブ）── 4エントリ
+  onset('pos_01', 'express_positive', 'いいね',       ['いいじゃん'],         8000,  'positive', 'high'),
+  onset('pos_02', 'express_positive', 'それ最高',     ['すごいじゃん'],       10000, 'positive', 'high'),
+  onset('pos_03', 'express_positive', 'やるじゃん',   ['すごいね'],           9000,  'positive'),
+  onset('pos_04', 'express_positive', 'うれしいね',   ['よかった'],           8000,  'positive'),
 
-  // express_surprise
-  { id: 'onset_sur_001', intent: 'express_surprise', domain: 'universal', category: 'surprise', stage: 'onset', text: 'えっ、マジで', textVariants: ['えー！', 'うそ、ほんとに？'], requiresSynthesis: false, emotion: 'surprised', energy: 'high', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 12000 },
+  // ── express_negative（ネガティブ）── 4エントリ
+  onset('neg_01', 'express_negative', 'それはきつい',   ['つらいね'],           12000, 'negative'),
+  onset('neg_02', 'express_negative', '大変だったね',   ['それは大変'],         14000, 'negative'),
+  onset('neg_03', 'express_negative', 'うわ、それは',   ['うわー'],             10000, 'negative'),
+  onset('neg_04', 'express_negative', 'しんどいね',     ['きついね'],           11000, 'negative'),
 
-  // express_complaint
-  { id: 'onset_comp_001', intent: 'express_complaint', domain: 'universal', category: 'empathy', stage: 'onset', text: 'それはムカつくね', textVariants: ['わかる、それはイライラするね'], requiresSynthesis: false, emotion: 'negative', energy: 'mid', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 15000 },
+  // ── express_surprise（驚き）── 4エントリ
+  onset('sur_01', 'express_surprise', 'えっ、マジで',  ['うそ'],               10000, 'surprised', 'high'),
+  onset('sur_02', 'express_surprise', 'ほんとに',      ['まじか'],             8000,  'surprised', 'high'),
+  onset('sur_03', 'express_surprise', 'えー！',        ['うわっ'],             7000,  'surprised', 'high'),
+  onset('sur_04', 'express_surprise', 'びっくりした',  ['それは知らなかった'], 12000, 'surprised'),
 
-  // question_factual
-  { id: 'onset_qf_001', intent: 'question_factual', domain: 'universal', category: 'aizuchi', stage: 'onset', text: 'えーっと', textVariants: ['うーん、そうだな'], requiresSynthesis: false, emotion: 'neutral', energy: 'low', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 5000 },
+  // ── express_complaint（不満・愚痴）── 4エントリ
+  onset('comp_01', 'express_complaint', 'それはムカつく', ['わかるそれ'],         12000, 'negative'),
+  onset('comp_02', 'express_complaint', 'それはひどい',   ['ありえないね'],       13000, 'negative'),
+  onset('comp_03', 'express_complaint', 'わかるわー',     ['めんどいね'],         10000, 'negative'),
+  onset('comp_04', 'express_complaint', 'イライラするね', ['それはしんどい'],     11000, 'negative'),
 
-  // question_opinion
-  { id: 'onset_qo_001', intent: 'question_opinion', domain: 'universal', category: 'aizuchi', stage: 'onset', text: '個人的には', textVariants: ['うーん、正直に言うと'], requiresSynthesis: false, emotion: 'neutral', energy: 'mid', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 8000 },
+  // ── question_factual（事実質問）── 3エントリ
+  onset('qf_01', 'question_factual', 'えっとね',    ['そうだな'],           5000),
+  onset('qf_02', 'question_factual', 'うーん',      ['ちょっと待って'],     4000, 'neutral', 'low'),
+  onset('qf_03', 'question_factual', 'それはね',    ['確かそれは'],         6000),
 
-  // question_how
-  { id: 'onset_qh_001', intent: 'question_how', domain: 'universal', category: 'aizuchi', stage: 'onset', text: 'そうだなぁ', textVariants: ['えっとね'], requiresSynthesis: false, emotion: 'neutral', energy: 'low', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 8000 },
+  // ── question_opinion（意見質問）── 3エントリ
+  onset('qo_01', 'question_opinion', '個人的には',  ['正直言うと'],         8000),
+  onset('qo_02', 'question_opinion', 'うーん、そうだな', ['どうだろう'],     7000, 'neutral', 'low'),
+  onset('qo_03', 'question_opinion', 'ぶっちゃけ',  ['率直に言うと'],       9000),
 
-  // request_action
-  { id: 'onset_ra_001', intent: 'request_action', domain: 'universal', category: 'aizuchi', stage: 'onset', text: 'わかった、やってみる', textVariants: ['了解'], requiresSynthesis: false, emotion: 'neutral', energy: 'mid', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 5000 },
+  // ── question_how（方法質問）── 3エントリ
+  onset('qh_01', 'question_how', 'そうだなぁ',   ['えっとね'],           7000),
+  onset('qh_02', 'question_how', 'それはね',     ['やり方としては'],     6000),
+  onset('qh_03', 'question_how', 'ポイントは',   ['コツとしては'],       8000),
 
-  // request_explanation
-  { id: 'onset_re_001', intent: 'request_explanation', domain: 'universal', category: 'aizuchi', stage: 'onset', text: 'そうだね、説明すると', textVariants: ['えっとね、簡単に言うと'], requiresSynthesis: false, emotion: 'neutral', energy: 'mid', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 8000 },
+  // ── request_action（行動要求）── 3エントリ
+  onset('ra_01', 'request_action', 'わかった',    ['了解'],               5000),
+  onset('ra_02', 'request_action', 'やってみる',  ['やっておく'],         5000),
+  onset('ra_03', 'request_action', 'まかせて',    ['オッケー'],           6000),
 
-  // topic_continue
-  { id: 'onset_tc_001', intent: 'topic_continue', domain: 'universal', category: 'aizuchi', stage: 'onset', text: 'うん、それでそれで', textVariants: ['なるほど、続きは？'], requiresSynthesis: false, emotion: 'neutral', energy: 'mid', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 8000 },
+  // ── request_explanation（説明要求）── 3エントリ
+  onset('re_01', 'request_explanation', 'えっとね',     ['説明すると'],         6000),
+  onset('re_02', 'request_explanation', 'そうだね',     ['わかりやすく言うと'], 7000),
+  onset('re_03', 'request_explanation', 'かいつまんで', ['ざっくり言うと'],     8000),
 
-  // topic_shift
-  { id: 'onset_ts_001', intent: 'topic_shift', domain: 'universal', category: 'aizuchi', stage: 'onset', text: 'あ、そっちの話ね', textVariants: ['話変わるね、なるほど'], requiresSynthesis: false, emotion: 'neutral', energy: 'mid', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 5000 },
+  // ── topic_continue（話題継続）── 3エントリ
+  onset('tc_01', 'topic_continue', 'それで',         ['うん、それで'],       6000),
+  onset('tc_02', 'topic_continue', 'うん、続きは',   ['ほんで？'],           7000),
+  onset('tc_03', 'topic_continue', 'なるほど、で',   ['それで？'],           7000),
 
-  // topic_deepen
-  { id: 'onset_td_001', intent: 'topic_deepen', domain: 'universal', category: 'deepening', stage: 'onset', text: 'そこ気になる', textVariants: ['もう少し聞いていい？'], requiresSynthesis: false, emotion: 'neutral', energy: 'mid', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 10000 },
+  // ── topic_shift（話題転換）── 3エントリ
+  onset('ts_01', 'topic_shift', 'あ、そっちね',   ['話変わるね'],         5000),
+  onset('ts_02', 'topic_shift', 'ほお',           ['そういえば'],         4000),
+  onset('ts_03', 'topic_shift', 'そういえば',     ['急に話変わるけど'],   6000),
 
-  // storytelling
-  { id: 'onset_st_001', intent: 'storytelling', domain: 'universal', category: 'aizuchi', stage: 'onset', text: 'え、何があったの', textVariants: ['聞かせて聞かせて'], requiresSynthesis: false, emotion: 'positive', energy: 'high', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 8000 },
+  // ── topic_deepen（深掘り）── 3エントリ
+  onset('td_01', 'topic_deepen', 'そこ気になる',   ['もう少し聞いて'],     9000),
+  onset('td_02', 'topic_deepen', 'それ詳しく',     ['もっと教えて'],       8000),
+  onset('td_03', 'topic_deepen', 'なんで？',       ['理由は？'],           7000),
 
-  // confirmation
-  { id: 'onset_conf_001', intent: 'confirmation', domain: 'universal', category: 'confirmation', stage: 'onset', text: 'えっと、確認すると', textVariants: ['つまりね'], requiresSynthesis: false, emotion: 'neutral', energy: 'mid', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 8000 },
+  // ── storytelling（体験談）── 4エントリ
+  onset('st_01', 'storytelling', '何があったの',   ['聞かせて'],           7000,  'positive', 'high'),
+  onset('st_02', 'storytelling', 'えっ、マジで',   ['うそ、それ'],         9000,  'surprised', 'high'),
+  onset('st_03', 'storytelling', 'あ、それは',     ['そうなんだ'],         6000),
+  onset('st_04', 'storytelling', '面白そう',       ['気になる'],           8000,  'positive'),
 
-  // disagreement
-  { id: 'onset_dis_001', intent: 'disagreement', domain: 'universal', category: 'aizuchi', stage: 'onset', text: 'うーん、そうかなぁ', textVariants: ['どうだろう'], requiresSynthesis: false, emotion: 'neutral', energy: 'low', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 10000 },
+  // ── confirmation（確認）── 3エントリ
+  onset('conf_01', 'confirmation', 'えっとね',       ['確認すると'],         6000),
+  onset('conf_02', 'confirmation', 'つまりね',        ['言い換えると'],       7000),
+  onset('conf_03', 'confirmation', 'そういうこと？',  ['ってこと？'],         8000),
 
-  // ambiguous (filler)
-  { id: 'onset_fill_001', intent: 'ambiguous', domain: 'universal', category: 'filler', stage: 'onset', text: 'うーん、ちょっと考えるね', textVariants: ['えっと、そうだなあ'], requiresSynthesis: false, emotion: 'neutral', energy: 'low', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 20000 },
+  // ── disagreement（反対・否定）── 3エントリ
+  onset('dis_01', 'disagreement', 'うーん、どうかな', ['そうかなあ'],         9000),
+  onset('dis_02', 'disagreement', 'むずかしいね',     ['一概には'],           10000),
+  onset('dis_03', 'disagreement', 'でもさ',           ['ちょっと待って'],     7000),
+
+  // ── ambiguous（パターン不一致・汎用）──
+  // 短くて自然な汎用反応を8種類、短いテキスト優先（合成速度重視）
+  onset('amb_01', 'ambiguous', 'へえ',         [],                     4000),
+  onset('amb_02', 'ambiguous', 'そっかー',     ['そっか'],             5000),
+  onset('amb_03', 'ambiguous', 'うんうん',     ['うん'],               4000),
+  onset('amb_04', 'ambiguous', 'そうなんだ',   [],                     5000),
+  onset('amb_05', 'ambiguous', 'あ、なるほど', ['なるほど'],           6000),
+  onset('amb_06', 'ambiguous', 'ふーん',       [],                     4000),
+  onset('amb_07', 'ambiguous', 'それはそれは', [],                     6000),
+  onset('amb_08', 'ambiguous', 'マジで',       ['ほんとに？'],         5000),
 ]
 
-// MVP body テンプレート（シンプルな固定テキスト）
+// =========================================================
+// Body テンプレート
+// =========================================================
 const BODY_DATA: ResponseEntry[] = [
-  { id: 'body_ack_001', intent: 'acknowledgment', domain: 'universal', category: 'deepening', stage: 'body', text: 'それで、もうちょっと詳しく聞かせてもらえる？', textVariants: [], requiresSynthesis: true, emotion: 'neutral', energy: 'mid', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 15000 },
-  { id: 'body_neg_001', intent: 'express_negative', domain: 'universal', category: 'empathy', stage: 'body', text: '何かあったの？よかったら話してみて。', textVariants: [], requiresSynthesis: true, emotion: 'negative', energy: 'low', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 20000 },
-  { id: 'body_pos_001', intent: 'express_positive', domain: 'universal', category: 'deepening', stage: 'body', text: 'いいじゃん！どんな感じだった？', textVariants: [], requiresSynthesis: true, emotion: 'positive', energy: 'high', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 15000 },
-  { id: 'body_sur_001', intent: 'express_surprise', domain: 'universal', category: 'deepening', stage: 'body', text: 'それ、もっと詳しく聞かせてよ。', textVariants: [], requiresSynthesis: true, emotion: 'surprised', energy: 'high', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 15000 },
-  { id: 'body_fall_001', intent: 'ambiguous', domain: 'universal', category: 'fallback', stage: 'body', text: '面白いね。もっと聞かせて。', textVariants: [], requiresSynthesis: true, emotion: 'neutral', energy: 'mid', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 10000 },
+  { id: 'body_ack_01',  intent: 'acknowledgment',   domain: 'universal', category: 'deepening', stage: 'body', text: 'もうちょっと詳しく聞かせて。', textVariants: [], requiresSynthesis: true, emotion: 'neutral',   energy: 'mid',  formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 15000 },
+  { id: 'body_neg_01',  intent: 'express_negative',  domain: 'universal', category: 'empathy',   stage: 'body', text: '何かあったの？よかったら話して。', textVariants: [], requiresSynthesis: true, emotion: 'negative',  energy: 'low',  formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 20000 },
+  { id: 'body_pos_01',  intent: 'express_positive',  domain: 'universal', category: 'deepening', stage: 'body', text: 'どんな感じだった？', textVariants: [], requiresSynthesis: true, emotion: 'positive',  energy: 'high', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 15000 },
+  { id: 'body_sur_01',  intent: 'express_surprise',  domain: 'universal', category: 'deepening', stage: 'body', text: 'もっと詳しく聞かせてよ。', textVariants: [], requiresSynthesis: true, emotion: 'surprised', energy: 'high', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 15000 },
+  { id: 'body_comp_01', intent: 'express_complaint', domain: 'universal', category: 'empathy',   stage: 'body', text: '気持ちわかるよ。どうしたの？', textVariants: [], requiresSynthesis: true, emotion: 'negative',  energy: 'mid',  formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 15000 },
+  { id: 'body_st_01',   intent: 'storytelling',      domain: 'universal', category: 'deepening', stage: 'body', text: 'それ、どうなったの？', textVariants: [], requiresSynthesis: true, emotion: 'positive',  energy: 'high', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 12000 },
+  { id: 'body_fall_01', intent: 'ambiguous',         domain: 'universal', category: 'fallback',  stage: 'body', text: 'もっと聞かせて。', textVariants: ['それで？'], requiresSynthesis: true, emotion: 'neutral', energy: 'mid', formality: 'casual', topicTags: [], usageCount: 0, cooldownMs: 10000 },
 ]
 
+// =========================================================
+// ResponseBank
+// =========================================================
 export class ResponseBank {
   private byStageIntent = new Map<string, ResponseEntry[]>()
   private byId = new Map<string, ResponseEntry>()
 
   constructor() {
-    const all = [...ONSET_DATA, ...BODY_DATA]
-    for (const entry of all) {
+    for (const entry of [...ONSET_DATA, ...BODY_DATA]) {
       const key = `${entry.stage}:${entry.intent}`
       const list = this.byStageIntent.get(key) ?? []
       list.push(entry)
@@ -93,22 +178,23 @@ export class ResponseBank {
     const key = `onset:${intent}`
     const candidates = this.byStageIntent.get(key) ?? []
 
-    const now = Date.now()
-    const available = candidates.filter(
-      e => !e.lastUsedAt || now - e.lastUsedAt > e.cooldownMs
-    )
-    const pool = available.length > 0 ? available : candidates
+    // candidates がなければ ambiguous にフォールバック
+    const pool = candidates.length > 0 ? candidates : (this.byStageIntent.get('onset:ambiguous') ?? [])
 
-    // 使用回数が少ないものを優先、同数ならランダム
-    pool.sort((a, b) => a.usageCount - b.usageCount)
-    const minCount = pool[0].usageCount
-    const leastUsed = pool.filter(e => e.usageCount === minCount)
+    const now = Date.now()
+    const available = pool.filter(e => !e.lastUsedAt || now - e.lastUsedAt > e.cooldownMs)
+    const source = available.length > 0 ? available : pool
+
+    // 使用回数が少ないものを優先
+    source.sort((a, b) => a.usageCount - b.usageCount)
+    const minCount = source[0].usageCount
+    const leastUsed = source.filter(e => e.usageCount === minCount)
     const selected = leastUsed[Math.floor(Math.random() * leastUsed.length)]
 
     selected.usageCount++
     selected.lastUsedAt = now
 
-    // バリエーションからランダム選択
+    // textVariants からランダム選択
     const texts = [selected.text, ...selected.textVariants]
     return { ...selected, text: texts[Math.floor(Math.random() * texts.length)] }
   }
@@ -117,8 +203,6 @@ export class ResponseBank {
     const key = `body:${intent}`
     const candidates = this.byStageIntent.get(key) ?? []
     if (candidates.length > 0) return candidates[0]
-
-    // fallback
     return this.byStageIntent.get('body:ambiguous')?.[0] ?? null
   }
 }

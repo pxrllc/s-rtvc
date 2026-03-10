@@ -1,19 +1,18 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
 contextBridge.exposeInMainWorld('sentinel', {
-  // テキスト入力
   submitText: (text: string) => ipcRenderer.send('text:submit', text),
-
-  // 音声入力 (VADで確定した発話blob → Main)
-  submitAudio: (arrayBuffer: ArrayBuffer) =>
-    ipcRenderer.send('asr:audio', arrayBuffer),
-
-  // TTS
+  submitAudio: (arrayBuffer: ArrayBuffer) => ipcRenderer.send('asr:audio', arrayBuffer),
   stopTts: () => ipcRenderer.send('tts:stop_request'),
 
-  // Main → Renderer リスナー登録
-  onPcm: (cb: (pcm: Float32Array, sampleRate: number) => void) => {
-    ipcRenderer.on('tts:pcm', (_e, pcm, sampleRate) => cb(pcm, sampleRate))
+  onPcm: (cb: (pcm: Float32Array, sampleRate: number, id: string) => void) => {
+    ipcRenderer.on('tts:pcm', (_e, pcm, sampleRate, id) => cb(pcm, sampleRate, id))
+  },
+  // body をキャンセルして LLM PCM をエンキュー
+  onCancelAndEnqueue: (cb: (cancelId: string, pcm: Float32Array, sampleRate: number) => void) => {
+    ipcRenderer.on('tts:cancel_and_enqueue', (_e, cancelId, pcm, sampleRate) =>
+      cb(cancelId, pcm, sampleRate)
+    )
   },
   onTtsStop: (cb: () => void) => {
     ipcRenderer.on('tts:stop', () => cb())
@@ -32,7 +31,10 @@ contextBridge.exposeInMainWorld('sentinel', {
   },
 
   removeAllListeners: () => {
-    for (const ch of ['tts:pcm','tts:stop','log','intent:result','asr:transcript','asr:status']) {
+    for (const ch of [
+      'tts:pcm', 'tts:cancel_and_enqueue', 'tts:stop',
+      'log', 'intent:result', 'asr:transcript', 'asr:status'
+    ]) {
       ipcRenderer.removeAllListeners(ch)
     }
   }
