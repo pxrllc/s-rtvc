@@ -4,6 +4,7 @@ import { ConversationOrchestrator } from './orchestrator/ConversationOrchestrato
 import { GroqSTTClient } from './asr/GroqSTTClient'
 import { createLLMProvider } from './llm/LLMProviderFactory'
 import { createTtsProvider } from './tts/TtsProviderFactory'
+import { mergeConfig } from './config/RuntimeConfig'
 
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
@@ -32,7 +33,7 @@ function createWindow(): BrowserWindow {
 
 app.whenReady().then(async () => {
   const win = createWindow()
-  const env = import.meta.env as Record<string, string | undefined>
+  const env = mergeConfig(import.meta.env as Record<string, string | undefined>)
   const llmProvider = createLLMProvider(env)
   const ttsProvider = await createTtsProvider(env)
   const orchestrator = new ConversationOrchestrator(win, llmProvider, ttsProvider)
