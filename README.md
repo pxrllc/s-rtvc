@@ -12,6 +12,8 @@
 
 沈黙の時間をほぼゼロにすることで、AI との会話をより自然なリズムに近づけます。
 
+[![Image from Gyazo](https://i.gyazo.com/eb04482cb1fc1d427d1b7fe20bb75647.gif)](https://gyazo.com/eb04482cb1fc1d427d1b7fe20bb75647)
+
 ---
 
 ## 動作環境
