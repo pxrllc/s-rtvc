@@ -136,7 +136,7 @@ export default function App() {
     <div style={styles.root}>
       <div style={styles.header}>
         <span style={styles.title}>Sentinel RTVC</span>
-        <span style={styles.subtitle}>v0.1.4 — 音声 / テキスト → Aho-Corasick + LLM → TTS</span>
+        <span style={styles.subtitle}>v0.1.5 — 音声 / テキスト → Aho-Corasick + LLM → TTS</span>
       </div>
 
       <div style={styles.statusBar}>
