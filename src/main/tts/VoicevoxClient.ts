@@ -4,13 +4,15 @@
  */
 import type { TtsProvider } from './TtsProvider'
 
-const VOICEVOX_BASE = 'http://localhost:50021'
+const DEFAULT_BASE = 'http://localhost:50021'
 
 export class VoicevoxClient implements TtsProvider {
   private speakerId: number
+  private base: string
 
-  constructor(speakerId = 1) {
+  constructor(speakerId = 1, baseUrl?: string) {
     this.speakerId = speakerId
+    this.base = baseUrl ?? DEFAULT_BASE
   }
 
   /**
@@ -21,7 +23,7 @@ export class VoicevoxClient implements TtsProvider {
   async synthesize(text: string, speedScale = 1.0): Promise<Buffer> {
     // Step1: audio_query
     const queryRes = await fetch(
-      `${VOICEVOX_BASE}/audio_query?text=${encodeURIComponent(text)}&speaker=${this.speakerId}`,
+      `${this.base}/audio_query?text=${encodeURIComponent(text)}&speaker=${this.speakerId}`,
       { method: 'POST' }
     )
     if (!queryRes.ok) {
@@ -32,7 +34,7 @@ export class VoicevoxClient implements TtsProvider {
 
     // Step2: synthesis
     const synthRes = await fetch(
-      `${VOICEVOX_BASE}/synthesis?speaker=${this.speakerId}`,
+      `${this.base}/synthesis?speaker=${this.speakerId}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -88,7 +90,7 @@ export class VoicevoxClient implements TtsProvider {
 
   async ping(): Promise<boolean> {
     try {
-      const res = await fetch(`${VOICEVOX_BASE}/version`)
+      const res = await fetch(`${this.base}/version`)
       return res.ok
     } catch {
       return false

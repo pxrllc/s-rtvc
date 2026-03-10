@@ -44,13 +44,14 @@ app.whenReady().then(async () => {
   // 起動時初期化（VOICEVOX確認 + キャッシュロード）
   win.webContents.once('did-finish-load', async () => {
     const ttsMode = (env.MAIN_VITE_TTS_PROVIDER ?? 'http').toLowerCase()
-    win.webContents.send('log', 'info', `[TTS] モード: ${ttsMode}`)
+    const ttsBase = env.MAIN_VITE_TTS_BASE_URL ?? 'http://localhost:50021'
+    win.webContents.send('log', 'info', `[TTS] ${ttsMode} — ${ttsBase}`)
 
     const ok = await orchestrator.checkVoicevox()
     win.webContents.send('log', ok ? 'info' : 'error',
       ok
-        ? ttsMode === 'core' ? '[VOICEVOX Core] 初期化済み' : '[VOICEVOX] 接続OK'
-        : '[VOICEVOX] 初期化失敗 — 設定を確認してください'
+        ? ttsMode === 'core' ? '[VOICEVOX Core] 初期化済み' : `[TTS] 接続OK (${ttsBase})`
+        : `[TTS] 接続失敗 — ${ttsBase} を確認してください`
     )
 
     if (ok) await orchestrator.loadCache()
